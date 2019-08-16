@@ -5,7 +5,7 @@ from layers.dropblock import DropBlock2D
 from layers.dropblock import DropBlock3D
 
 
-class UNet2D1D(tf.keras.Model):
+class UNet2D2D(tf.keras.Model):
 
     def __init__(self, regularization=None, regularization_parameters=None):
         super().__init__()
@@ -64,36 +64,36 @@ class UNet2D1D(tf.keras.Model):
                                name_prefix='l_', activation=tf.keras.activations.relu):
 
         in_b, in_w, in_h, in_t, in_c = input_layer.get_shape().as_list()
-        perm_input_tensor = tf.transpose(input_layer, perm=[0, 3, 1, 2, 4])
-        reshaped_input_tensor = tf.reshape(perm_input_tensor, shape=(in_b * in_t,
-                                                                     in_w, in_h,
+        perm_input_tensor = tf.transpose(input_layer, perm=[0, 2, 1, 3, 4])
+        reshaped_input_tensor = tf.reshape(perm_input_tensor, shape=(in_b * in_h,
+                                                                     in_w, in_t,
                                                                      in_c))
-        conv2d_layer_name = name_prefix + "Conv2D_{}".format(filters)
-        conv2d = tf.keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
-                                        name=conv2d_layer_name, activation=activation,
-                                        kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
-        setattr(self, conv2d_layer_name, conv2d)
+        conv2d_layer_name_1 = name_prefix + "Conv2D_{}_1".format(filters)
+        conv2d_1 = tf.keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
+                                          name=conv2d_layer_name_1, activation=activation,
+                                          kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
+        setattr(self, conv2d_layer_name_1, conv2d_1)
 
-        conv2d = conv2d(reshaped_input_tensor)
-        conv2d = self._add_regularization_layer(conv2d, name_suffix=conv2d_layer_name)
+        conv2d_1 = conv2d_1(reshaped_input_tensor)
+        conv2d_1 = self._add_regularization_layer(conv2d_1, name_suffix=conv2d_layer_name_1)
 
-        reshaped_output_tensor = tf.reshape(conv2d, shape=(in_b, in_t,
-                                                           in_w, in_h, filters))
+        reshaped_output_tensor = tf.reshape(conv2d_1, shape=(in_w, in_t,
+                                                             in_b, in_h, filters))
 
-        perm_output_tensor = tf.transpose(reshaped_output_tensor, [0, 2, 3, 1, 4])
+        perm_output_tensor = tf.transpose(reshaped_output_tensor, [0, 2, 1, 3, 4])
 
-        reshaped_input_tensor = tf.reshape(perm_output_tensor, shape=(in_b * in_w * in_h,
+        reshaped_input_tensor = tf.reshape(perm_output_tensor, shape=(in_b * in_w, in_h,
                                                                       in_t, filters))
-        conv1d_layer_name = name_prefix + "Conv1D_{}".format(filters)
-        conv1d = tf.keras.layers.Conv1D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
-                                        name=conv1d_layer_name, activation=activation,
-                                        kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
-        setattr(self, conv1d_layer_name, conv1d)
+        conv2d_layer_name_2 = name_prefix + "Conv2D_{}_2".format(filters)
+        conv2d_2 = tf.keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
+                                          name=conv2d_layer_name_2, activation=activation,
+                                          kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
+        setattr(self, conv2d_layer_name_2, conv2d_2)
 
-        conv1d = conv1d(reshaped_input_tensor)
-        conv1d = self._add_regularization_layer(conv1d, input_type='1d', name_suffix=conv1d_layer_name)
+        conv2d_2 = conv2d_2(reshaped_input_tensor)
+        conv2d_2 = self._add_regularization_layer(conv2d_2, name_suffix=conv2d_layer_name_2)
 
-        output = tf.reshape(conv1d, shape=(in_b, in_w, in_h, in_t, filters))
+        output = tf.reshape(conv2d_2, shape=(in_b, in_w, in_h, in_t, filters))
 
         return output
 
