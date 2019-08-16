@@ -4,6 +4,9 @@ import os
 
 from networks.UNet3D import UNet3D
 from networks.UNet2D1D import UNet2D1D
+from networks.UNet3D_2 import UNet3D_2
+from networks.UNet2D2D import UNet2D2D
+
 from utils import send_email
 from utils import extract_images
 from utils import get_hostname
@@ -18,7 +21,7 @@ host_name = get_hostname()
 tasks = load_training_settings()
 no_of_tasks = len(tasks)
 
-NETWORK_TYPES = {'UNet3D': UNet3D, 'UNet2D1D': UNet2D1D}
+NETWORK_TYPES = {'UNet3D': UNet3D, 'UNet2D1D': UNet2D1D, 'UNet3D_2': UNet3D_2, 'UNet2D1D': UNet2D1D}
 OPTIMIZER_TYPES = {'Adam': tf.keras.optimizers.Adam, 'RMSprop': tf.keras.optimizers.RMSprop}
 LOSS_TYPES = {'ssim_loss': ssim_loss, 'psnr_loss': psnr_loss}
 METRICS_TYPES = {'ssim': ssim, 'psnr': psnr}
