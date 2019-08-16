@@ -26,6 +26,7 @@ OPTIMIZER_TYPES = {'Adam': tf.keras.optimizers.Adam, 'RMSprop': tf.keras.optimiz
 LOSS_TYPES = {'ssim_loss': ssim_loss, 'psnr_loss': psnr_loss}
 METRICS_TYPES = {'ssim': ssim, 'psnr': psnr}
 
+
 send_email('The task on {} has started, total tasks: {}.'.format(host_name, no_of_tasks),
            'Details of the training are in the attachment ', files=['./config/training_config.yaml'])
 

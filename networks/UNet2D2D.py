@@ -63,7 +63,7 @@ class UNet2D2D(tf.keras.Model):
     def _get_convolution_block(self, input_layer, filters, kernel_size=3, strides=1, padding='same',
                                name_prefix='l_', activation=tf.keras.activations.relu):
 
-        in_b, in_w, in_h, in_t, in_c = input_layer.get_shape().as_list()
+        in_b, in_w, in_h, in_t, in_c = tf.shape(input_layer)
         perm_input_tensor = tf.transpose(input_layer, perm=[0, 2, 1, 3, 4])
         reshaped_input_tensor = tf.reshape(perm_input_tensor, shape=(in_b * in_h,
                                                                      in_w, in_t,
