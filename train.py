@@ -126,7 +126,7 @@ for index, task in enumerate(tasks):
             model.load_weights(saved_network_weights_path)
 
         if task_type in ['predict', 'train_and_predict']:
-            result = model.predict(x_test, batch_size=network_settings['batch_size'], verbose=1)
+            result = model.predict(x_test, batch_size=network_settings['batch_size'], verbose=0)
             result_dict = {
                 'input': x_test,
                 'result': result,

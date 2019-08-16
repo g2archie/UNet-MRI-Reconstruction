@@ -1,10 +1,10 @@
 import tensorflow as tf
 
 from layers.instancenormalization import InstanceNormalization
-from layers.dropblock import DropBlock2D
 from layers.dropblock import DropBlock3D
 
-class UNet2D1D(tf.keras.Model):
+
+class UNet3D_2(tf.keras.Model):
 
     def __init__(self, regularization=None, regularization_parameters=None):
         super().__init__()
@@ -23,7 +23,7 @@ class UNet2D1D(tf.keras.Model):
         self.conv3d_1_1 = tf.keras.layers.Conv3D(filters=1, kernel_size=3, strides=1, padding='same', name='conv3d_1_1',
                                                  kernel_regularizer=self.kernel_regularizer)
 
-    def _add_regularization_layer(self, input_layer, name_suffix, input_type='2d'):
+    def _add_regularization_layer(self, input_layer, name_suffix):
 
         if self.regularization == 'batch_norm':
             layer_name = "Batch_Norm_" + name_suffix
@@ -42,59 +42,38 @@ class UNet2D1D(tf.keras.Model):
             dropout_layer = tf.keras.layers.Dropout(*self.regularization_parameters, name=layer_name)
             setattr(self, layer_name, dropout_layer)
             return dropout_layer(input_layer)
-
         elif self.regularization == 'dropblock':
-            if input_type == '1d':
-                return input_layer
-            elif input_type == '2d':
-                layer_name = "DropBlock_" + name_suffix
-                dropblock_layer = DropBlock2D(*self.regularization_parameters, name=layer_name)
-                setattr(self, layer_name, dropblock_layer)
-                return dropblock_layer(input_layer)
-            elif input_type == '3d':
-                layer_name = "DropBlock_" + name_suffix
-                dropblock_layer = DropBlock3D(*self.regularization_parameters, name=layer_name)
-                setattr(self, layer_name, dropblock_layer)
-                return dropblock_layer(input_layer)
+
+            layer_name = "DropBlock_" + name_suffix
+            dropblock_layer = DropBlock3D(*self.regularization_parameters, name=layer_name)
+            setattr(self, layer_name, dropblock_layer)
+            return dropblock_layer(input_layer)
 
         return input_layer
 
     def _get_convolution_block(self, input_layer, filters, kernel_size=3, strides=1, padding='same',
                                name_prefix='l_', activation=tf.keras.activations.relu):
 
-        in_b, in_w, in_h, in_t, in_c = input_layer.get_shape().as_list()
-        perm_input_tensor = tf.transpose(input_layer, perm=[0, 3, 1, 2, 4])
-        reshaped_input_tensor = tf.reshape(perm_input_tensor, shape=(in_b * in_t,
-                                                                     in_w, in_h,
-                                                                     in_c))
-        conv2d_layer_name = name_prefix + "Conv2D_{}".format(filters)
-        conv2d = tf.keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
-                                        name=conv2d_layer_name, activation=activation,
-                                        kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
-        setattr(self, conv2d_layer_name, conv2d)
+        conv3d_layer_name_1 = name_prefix + "Conv3D_{}_1".format(filters)
+        conv3d_1 = tf.keras.layers.Conv3D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
+                                          name=conv3d_layer_name_1, activation=activation,
+                                          kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
 
-        conv2d = conv2d(reshaped_input_tensor)
-        conv2d = self._add_regularization_layer(conv2d, name_suffix=conv2d_layer_name)
+        setattr(self, conv3d_layer_name_1, conv3d_1)
+        conv3d_1 = conv3d_1(input_layer)
+        conv3d_1 = self._add_regularization_layer(conv3d_1, name_suffix=conv3d_layer_name_1)
 
-        reshaped_output_tensor = tf.reshape(conv2d, shape=(in_b, in_t,
-                                                           in_w, in_h, filters))
+        conv3d_layer_name_2 = name_prefix + "Conv3D_{}_2".format(filters)
 
-        perm_output_tensor = tf.transpose(reshaped_output_tensor, [0, 2, 3, 1, 4])
+        conv3d_2 = tf.keras.layers.Conv3D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
+                                          name=conv3d_layer_name_2, activation=activation,
+                                          kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
 
-        reshaped_input_tensor = tf.reshape(perm_output_tensor, shape=(in_b * in_w * in_h,
-                                                                      in_t, filters))
-        conv1d_layer_name = name_prefix + "Conv1D_{}".format(filters)
-        conv1d = tf.keras.layers.Conv1D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
-                                        name=conv1d_layer_name, activation=activation,
-                                        kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
-        setattr(self, conv1d_layer_name, conv1d)
+        setattr(self, conv3d_layer_name_2, conv3d_2)
+        conv3d_2 = conv3d_2(conv3d_1)
+        conv3d_2 = self._add_regularization_layer(conv3d_2, name_suffix=conv3d_layer_name_2)
 
-        conv1d = conv1d(reshaped_input_tensor)
-        conv1d = self._add_regularization_layer(conv1d, input_type='1d', name_suffix=conv1d_layer_name)
-
-        output = tf.reshape(conv1d, shape=(in_b, in_w, in_h, in_t, filters))
-
-        return output
+        return conv3d_2
 
     def _get_convolution_transpose_layer(self, input_layer, filters, kernel_size=3, strides=(2, 2, 1), padding='same',
                                          name_prefix='r_', activation=tf.keras.activations.relu):
@@ -108,8 +87,7 @@ class UNet2D1D(tf.keras.Model):
 
         setattr(self, conv3d_transpose_layer_name, conv3d_transpose)
         conv3d_transpose = conv3d_transpose(input_layer)
-        conv3d_transpose = self._add_regularization_layer(conv3d_transpose, name_suffix=conv3d_transpose_layer_name,
-                                                          input_type='3d')
+        conv3d_transpose = self._add_regularization_layer(conv3d_transpose, name_suffix=conv3d_transpose_layer_name)
         return conv3d_transpose
 
     def _get_max_pool_3d(self, filters, pool_size=(2, 2, 1), strides=(2, 2, 1), padding='same',
@@ -146,7 +124,7 @@ class UNet2D1D(tf.keras.Model):
             current_layer = self._get_convolution_block(input_layer=concat_layer, filters=filters, name_prefix='r_')
 
         conv3d_1_1 = self.conv3d_1_1(current_layer)
-        conv3d_1_1 = self._add_regularization_layer(conv3d_1_1, name_suffix='conv3d_1_1', input_type='3d')
+        conv3d_1_1 = self._add_regularization_layer(conv3d_1_1, name_suffix='conv3d_1_1')
 
         sum = tf.keras.layers.add([conv3d_1_1, inputs])
         update = tf.keras.activations.relu(sum)
