@@ -63,39 +63,48 @@ class UNet2D2D(tf.keras.Model):
     def _get_convolution_block(self, input_layer, filters, kernel_size=3, strides=1, padding='same',
                                name_prefix='l_', activation=tf.keras.activations.relu):
 
-        in_b, in_w, in_h, in_t, in_c = tf.shape(input_layer)
-        perm_input_tensor = tf.transpose(input_layer, perm=[0, 2, 1, 3, 4])
-        reshaped_input_tensor = tf.reshape(perm_input_tensor, shape=(in_b * in_h,
-                                                                     in_w, in_t,
-                                                                     in_c))
+        in_b, in_w, in_h, in_t, in_c = input_layer.get_shape().as_list()
+        permute_layer_name_1 = name_prefix + "Permute_{}_1".format(filters)
+        permute_layer_1 = tf.keras.layers.Permute((2, 1, 3, 4), name=permute_layer_name_1)
+        setattr(self, permute_layer_name_1, permute_layer_1)
+
+        permute_layer_1 = permute_layer_1(input_layer)
+
+        reshape_layer_1 = tf.reshape(permute_layer_1, shape=(-1,
+                                                             in_w, in_t,
+                                                             in_c))
+
         conv2d_layer_name_1 = name_prefix + "Conv2D_{}_1".format(filters)
         conv2d_1 = tf.keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
                                           name=conv2d_layer_name_1, activation=activation,
                                           kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
         setattr(self, conv2d_layer_name_1, conv2d_1)
 
-        conv2d_1 = conv2d_1(reshaped_input_tensor)
+        conv2d_1 = conv2d_1(reshape_layer_1)
         conv2d_1 = self._add_regularization_layer(conv2d_1, name_suffix=conv2d_layer_name_1)
 
-        reshaped_output_tensor = tf.reshape(conv2d_1, shape=(in_w, in_t,
-                                                             in_b, in_h, filters))
+        reshape_layer_2 = tf.reshape(conv2d_1, shape=(-1, in_h,
+                                                      in_w, in_t, filters))
 
-        perm_output_tensor = tf.transpose(reshaped_output_tensor, [0, 2, 1, 3, 4])
+        permute_layer_name_2 = name_prefix + "Permute_{}_2".format(filters)
+        permute_layer_2 = tf.keras.layers.Permute((2, 1, 3, 4), name=permute_layer_name_2)
+        setattr(self, permute_layer_name_2, permute_layer_2)
+        permute_layer_2 = permute_layer_2(reshape_layer_2)
 
-        reshaped_input_tensor = tf.reshape(perm_output_tensor, shape=(in_b * in_w, in_h,
-                                                                      in_t, filters))
+        reshape_layer_3 = tf.keras.backend.reshape(permute_layer_2, shape=(-1, in_h,
+                                                                           in_t, filters))
         conv2d_layer_name_2 = name_prefix + "Conv2D_{}_2".format(filters)
         conv2d_2 = tf.keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
                                           name=conv2d_layer_name_2, activation=activation,
                                           kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
         setattr(self, conv2d_layer_name_2, conv2d_2)
 
-        conv2d_2 = conv2d_2(reshaped_input_tensor)
+        conv2d_2 = conv2d_2(reshape_layer_3)
         conv2d_2 = self._add_regularization_layer(conv2d_2, name_suffix=conv2d_layer_name_2)
 
-        output = tf.reshape(conv2d_2, shape=(in_b, in_w, in_h, in_t, filters))
+        reshape_layer_4 = tf.keras.backend.reshape(conv2d_2, shape=(-1, in_w, in_h, in_t, filters))
 
-        return output
+        return reshape_layer_4
 
     def _get_convolution_transpose_layer(self, input_layer, filters, kernel_size=3, strides=(2, 2, 1), padding='same',
                                          name_prefix='r_', activation=tf.keras.activations.relu):

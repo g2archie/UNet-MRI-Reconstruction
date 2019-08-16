@@ -21,7 +21,7 @@ host_name = get_hostname()
 tasks = load_training_settings()
 no_of_tasks = len(tasks)
 
-NETWORK_TYPES = {'UNet3D': UNet3D, 'UNet2D1D': UNet2D1D, 'UNet3D_2': UNet3D_2, 'UNet2D1D': UNet2D1D}
+NETWORK_TYPES = {'UNet3D': UNet3D, 'UNet2D1D': UNet2D1D, 'UNet3D_2': UNet3D_2, 'UNet2D2D': UNet2D2D}
 OPTIMIZER_TYPES = {'Adam': tf.keras.optimizers.Adam, 'RMSprop': tf.keras.optimizers.RMSprop}
 LOSS_TYPES = {'ssim_loss': ssim_loss, 'psnr_loss': psnr_loss}
 METRICS_TYPES = {'ssim': ssim, 'psnr': psnr}
@@ -57,6 +57,7 @@ for index, task in enumerate(tasks):
             y_train = extract_images(task['input_data_path']['y_train'], 'imagesTrue')
             x_validation = extract_images(task['input_data_path']['x_val'], 'imagesRecon')
             y_validation = extract_images(task['input_data_path']['y_val'], 'imagesTrue')
+            input_data_shape = x_train.shape
 
         if task_type in ['predict', 'train_and_predict']:
             x_test = extract_images(task['input_data_path']['x_test'], 'imagesRecon')
@@ -102,6 +103,9 @@ for index, task in enumerate(tasks):
         model.compile(optimizer=optimizer,
                       loss=loss,
                       metrics=metrics)
+
+        model.build(input_shape=(network_settings['batch_size'],
+                                 input_data_shape[1], input_data_shape[2], input_data_shape[3]))
         start_notification = 'The {} of {} has been set up and ready for training on {} task {} of {}.'.format(task_type,
                                                                                                                task_name,
                                                                                                                host_name,

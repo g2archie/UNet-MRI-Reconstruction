@@ -26,6 +26,7 @@ def extract_images(filename, image_name):
     data = h5py.File(filename, 'r').get(image_name)
     data = numpy.array(data)
     print("Shape of data is {}".format(data.shape))
+
     return data
 
 
