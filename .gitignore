@@ -5,3 +5,4 @@ data/
 
 *.ipynb
 *.zip
+__pycache__
