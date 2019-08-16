@@ -1,0 +1,61 @@
+- task_name: 'UNet3D_SSIM_loss_no_regularization'
+  task_type: 'train_and_predict'
+  email_notification: true
+  input_data_path:
+    x_train: './data/input_train.h5'
+    y_train: './data/truth_train.h5'
+    x_test: './data/input_test.h5'
+    y_test: './data/truth_test.h5'
+    x_val: './data/input_validation.h5'
+    y_val: './data/truth_validation.h5'
+    saved_network_weights:
+  network_settings:
+    network_type: 'UNet3D'
+    batch_size: 1
+    epochs: 20
+    loss: 'ssim_loss'
+    metrics:
+              - 'MSE'
+              - 'psnr'
+    optimizer:
+      type: 'Adam'
+      learning_rate: 1.0e-04
+    regularization:
+      type:
+      parameters:
+    early_stopping:
+      use: true
+      patience: 3
+      min_delta: 1.0e-04
+  output_data_dir: './keras_training'
+
+- task_name: 'UNet3D_PSNR_loss_no_regularization'
+  task_type: 'train_and_predict'
+  email_notification: true
+  input_data_path:
+    x_train: './data/input_train.h5'
+    y_train: './data/truth_train.h5'
+    x_test: './data/input_test.h5'
+    y_test: './data/truth_test.h5'
+    x_val: './data/input_validation.h5'
+    y_val: './data/truth_validation.h5'
+    saved_network_weights:
+  network_settings:
+    network_type: 'UNet3D'
+    batch_size: 1
+    epochs: 20
+    loss: 'psnr_loss'
+    metrics:
+              - 'ssim'
+              - 'MSE'
+    optimizer:
+      type: 'Adam'
+      learning_rate: 1.0e-03
+    regularization:
+      type:
+      parameters:
+    early_stopping:
+      use: true
+      patience: 3
+      min_delta: 1.0e-04
+  output_data_dir: './keras_training'

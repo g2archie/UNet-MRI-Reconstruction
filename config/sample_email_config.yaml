@@ -1,0 +1,6 @@
+smtp_server: 'smtp-mail.outlook.com'
+smtp_server_port: 587
+sender_email_address: ''
+sender_email_password: ''
+receiver_email_address: ''
+
