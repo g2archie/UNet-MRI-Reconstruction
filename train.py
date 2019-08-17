@@ -33,11 +33,11 @@ send_email('The task on {} has started, total tasks: {}.'.format(host_name, no_o
 for index, task in enumerate(tasks):
 
     try:
-        tf.keras.backend.clear_session()
-        tf.reset_default_graph()
+
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         tf.keras.backend.set_session(tf.Session(config=config))
+
         task_name = task['task_name']
         task_type = task['task_type']
         OUTPUT_DIR = os.path.join(os.path.abspath(task['output_data_dir']), task_name,
@@ -148,6 +148,9 @@ for index, task in enumerate(tasks):
         if task['email_notification']:
             send_email(end_notification,
                        'Please see the details of settings in the previous email')
+
+        tf.keras.backend.clear_session()
+
     except Exception as e:
         error_notification = "When completing the task {} of {}, error: {}, task stopped. ".format(index+1,
                                                                                                    no_of_tasks,
