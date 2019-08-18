@@ -2,9 +2,9 @@ from datetime import datetime
 import pickle
 import os
 
-from networks.UNet3D import UNet3D
+from networks.UNet3D_old import UNet3D_old
 from networks.UNet2D1D import UNet2D1D
-from networks.UNet3D_2 import UNet3D_2
+from networks.UNet3D import UNet3D
 from networks.UNet2D2D import UNet2D2D
 
 from utils import send_email
@@ -21,7 +21,7 @@ host_name = get_hostname()
 tasks = load_training_settings()
 no_of_tasks = len(tasks)
 
-NETWORK_TYPES = {'UNet3D': UNet3D, 'UNet2D1D': UNet2D1D, 'UNet3D_2': UNet3D_2, 'UNet2D2D': UNet2D2D}
+NETWORK_TYPES = {'UNet3D': UNet3D, 'UNet2D1D': UNet2D1D, 'UNet3D_old': UNet3D_old, 'UNet2D2D': UNet2D2D}
 OPTIMIZER_TYPES = {'Adam': tf.keras.optimizers.Adam, 'RMSprop': tf.keras.optimizers.RMSprop}
 LOSS_TYPES = {'ssim_loss': ssim_loss, 'psnr_loss': psnr_loss}
 METRICS_TYPES = {'ssim': ssim, 'psnr': psnr}
@@ -33,7 +33,7 @@ send_email('The task on {} has started, total tasks: {}.'.format(host_name, no_o
 for index, task in enumerate(tasks):
 
     try:
-
+        tf.keras.backend.clear_session()
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         tf.keras.backend.set_session(tf.Session(config=config))
@@ -62,6 +62,7 @@ for index, task in enumerate(tasks):
         if task_type in ['predict', 'train_and_predict']:
             x_test = extract_images(task['input_data_path']['x_test'], 'imagesRecon')
             y_test = extract_images(task['input_data_path']['y_test'], 'imagesTrue')
+            input_data_shape = x_test.shape
 
         network_settings = task['network_settings']
 
@@ -71,7 +72,7 @@ for index, task in enumerate(tasks):
                                                          save_weights_only=True)
         callback_list.append(cp_callback)
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=tensorboard_logdir, histogram_freq=2,
-                                                              write_graph=True, write_grads=True, write_images=False,
+                                                              write_graph=True, write_grads=True, write_images=True,
                                                               batch_size=network_settings['batch_size'])
         callback_list.append(tensorboard_callback)
         if network_settings['early_stopping']['use']:
@@ -148,8 +149,6 @@ for index, task in enumerate(tasks):
         if task['email_notification']:
             send_email(end_notification,
                        'Please see the details of settings in the previous email')
-
-        tf.keras.backend.clear_session()
 
     except Exception as e:
         error_notification = "When completing the task {} of {}, error: {}, task stopped. ".format(index+1,

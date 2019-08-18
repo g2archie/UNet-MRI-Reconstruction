@@ -28,20 +28,29 @@ class UNet2D1D(tf.keras.Model):
 
         if self.regularization == 'batch_norm':
             layer_name = "Batch_Norm_" + name_suffix
-            batch_norm_layer = tf.keras.layers.BatchNormalization(-1, name=layer_name)
-            setattr(self, layer_name, batch_norm_layer)
+            if hasattr(self, layer_name):
+                batch_norm_layer = getattr(self, layer_name)
+            else:
+                batch_norm_layer = tf.keras.layers.BatchNormalization(-1, name=layer_name)
+                setattr(self, layer_name, batch_norm_layer)
             return batch_norm_layer(input_layer)
 
         elif self.regularization == 'instance_norm':
             layer_name = "Instance_Norm_" + name_suffix
-            instance_norm_layer = InstanceNormalization(-1, name=layer_name)
-            setattr(self, layer_name, instance_norm_layer)
+            if hasattr(self, layer_name):
+                instance_norm_layer = getattr(self, layer_name)
+            else:
+                instance_norm_layer = InstanceNormalization(-1, name=layer_name)
+                setattr(self, layer_name, instance_norm_layer)
             return instance_norm_layer(input_layer)
 
         elif self.regularization == 'dropout':
             layer_name = "Dropout_" + name_suffix
-            dropout_layer = tf.keras.layers.Dropout(*self.regularization_parameters, name=layer_name)
-            setattr(self, layer_name, dropout_layer)
+            if hasattr(self, layer_name):
+                dropout_layer = getattr(self, layer_name)
+            else:
+                dropout_layer = tf.keras.layers.Dropout(*self.regularization_parameters, name=layer_name)
+                setattr(self, layer_name, dropout_layer)
             return dropout_layer(input_layer)
 
         elif self.regularization == 'dropblock':
@@ -49,13 +58,19 @@ class UNet2D1D(tf.keras.Model):
                 return input_layer
             elif input_type == '2d':
                 layer_name = "DropBlock_" + name_suffix
-                dropblock_layer = DropBlock2D(*self.regularization_parameters, name=layer_name)
-                setattr(self, layer_name, dropblock_layer)
+                if hasattr(self, layer_name):
+                    dropblock_layer = getattr(self, layer_name)
+                else:
+                    dropblock_layer = DropBlock2D(*self.regularization_parameters, name=layer_name)
+                    setattr(self, layer_name, dropblock_layer)
                 return dropblock_layer(input_layer)
             elif input_type == '3d':
                 layer_name = "DropBlock_" + name_suffix
-                dropblock_layer = DropBlock3D(*self.regularization_parameters, name=layer_name)
-                setattr(self, layer_name, dropblock_layer)
+                if hasattr(self, layer_name):
+                    dropblock_layer = getattr(self, layer_name)
+                else:
+                    dropblock_layer = DropBlock3D(*self.regularization_parameters, name=layer_name)
+                    setattr(self, layer_name, dropblock_layer)
                 return dropblock_layer(input_layer)
 
         return input_layer
@@ -65,8 +80,11 @@ class UNet2D1D(tf.keras.Model):
 
         in_b, in_w, in_h, in_t, in_c = input_layer.get_shape().as_list()
         permute_layer_name_1 = name_prefix + "Permute_{}_1".format(filters)
-        permute_layer_1 = tf.keras.layers.Permute((3, 1, 2, 4), name=permute_layer_name_1)
-        setattr(self, permute_layer_name_1, permute_layer_1)
+        if hasattr(self, permute_layer_name_1):
+            permute_layer_1 = getattr(self, permute_layer_name_1)
+        else:
+            permute_layer_1 = tf.keras.layers.Permute((3, 1, 2, 4), name=permute_layer_name_1)
+            setattr(self, permute_layer_name_1, permute_layer_1)
 
         permute_layer_1 = permute_layer_1(input_layer)
 
@@ -75,10 +93,14 @@ class UNet2D1D(tf.keras.Model):
                                                              in_c))
 
         conv2d_layer_name = name_prefix + "Conv2D_{}".format(filters)
-        conv2d = tf.keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
-                                        name=conv2d_layer_name, activation=activation,
-                                        kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
-        setattr(self, conv2d_layer_name, conv2d)
+
+        if hasattr(self, conv2d_layer_name):
+            conv2d = getattr(self, conv2d_layer_name)
+        else:
+            conv2d = tf.keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
+                                            name=conv2d_layer_name, activation=activation,
+                                            kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
+            setattr(self, conv2d_layer_name, conv2d)
 
         conv2d = conv2d(reshape_layer_1)
         conv2d = self._add_regularization_layer(conv2d, name_suffix=conv2d_layer_name)
@@ -86,18 +108,25 @@ class UNet2D1D(tf.keras.Model):
         reshape_layer_2 = tf.reshape(conv2d, shape=(-1, in_t,
                                                     in_w, in_h, filters))
         permute_layer_name_2 = name_prefix + "Permute_{}_2".format(filters)
-        permute_layer_2 = tf.keras.layers.Permute((2, 3, 1, 4), name=permute_layer_name_2)
-        setattr(self, permute_layer_name_2, permute_layer_2)
+        if hasattr(self, permute_layer_name_2):
+            permute_layer_2 = getattr(self, permute_layer_name_2)
+        else:
+            permute_layer_2 = tf.keras.layers.Permute((2, 3, 1, 4), name=permute_layer_name_2)
+            setattr(self, permute_layer_name_2, permute_layer_2)
         permute_layer_2 = permute_layer_2(reshape_layer_2)
 
         reshape_layer_3 = tf.reshape(permute_layer_2, shape=(-1,
                                                              in_t, filters))
 
         conv1d_layer_name = name_prefix + "Conv1D_{}".format(filters)
-        conv1d = tf.keras.layers.Conv1D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
-                                        name=conv1d_layer_name, activation=activation,
-                                        kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
-        setattr(self, conv1d_layer_name, conv1d)
+
+        if hasattr(self, conv1d_layer_name):
+            conv1d = getattr(self, conv1d_layer_name)
+        else:
+            conv1d = tf.keras.layers.Conv1D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
+                                            name=conv1d_layer_name, activation=activation,
+                                            kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
+            setattr(self, conv1d_layer_name, conv1d)
 
         conv1d = conv1d(reshape_layer_3)
         conv1d = self._add_regularization_layer(conv1d, input_type='1d', name_suffix=conv1d_layer_name)
@@ -110,13 +139,16 @@ class UNet2D1D(tf.keras.Model):
                                          name_prefix='r_', activation=tf.keras.activations.relu):
 
         conv3d_transpose_layer_name = name_prefix + "UpConv3D_{}".format(filters)
-        conv3d_transpose = tf.keras.layers.Convolution3DTranspose(filters=filters, kernel_size=kernel_size,
-                                                                  strides=strides, padding=padding,
-                                                                  activation=activation,
-                                                                  name=conv3d_transpose_layer_name,
-                                                                  kernel_regularizer=self.kernel_regularizer)
+        if hasattr(self, conv3d_transpose_layer_name):
+            conv3d_transpose = getattr(self, conv3d_transpose_layer_name)
+        else:
+            conv3d_transpose = tf.keras.layers.Convolution3DTranspose(filters=filters, kernel_size=kernel_size,
+                                                                      strides=strides, padding=padding,
+                                                                      activation=activation,
+                                                                      name=conv3d_transpose_layer_name,
+                                                                      kernel_regularizer=self.kernel_regularizer)
 
-        setattr(self, conv3d_transpose_layer_name, conv3d_transpose)
+            setattr(self, conv3d_transpose_layer_name, conv3d_transpose)
         conv3d_transpose = conv3d_transpose(input_layer)
         conv3d_transpose = self._add_regularization_layer(conv3d_transpose, name_suffix=conv3d_transpose_layer_name,
                                                           input_type='3d')
@@ -126,9 +158,12 @@ class UNet2D1D(tf.keras.Model):
                          name_prefix='l_'):
 
         maxpool_3d_layer_name = name_prefix + "MaxPool3D_{}".format(filters)
-        maxpool_3d = tf.keras.layers.MaxPooling3D(pool_size=pool_size, strides=strides, padding=padding,
-                                                  name=maxpool_3d_layer_name)
-        setattr(self, maxpool_3d_layer_name, maxpool_3d)
+        if hasattr(self, maxpool_3d_layer_name):
+            maxpool_3d = getattr(self, maxpool_3d_layer_name)
+        else:
+            maxpool_3d = tf.keras.layers.MaxPooling3D(pool_size=pool_size, strides=strides, padding=padding,
+                                                      name=maxpool_3d_layer_name)
+            setattr(self, maxpool_3d_layer_name, maxpool_3d)
 
         return maxpool_3d
 
