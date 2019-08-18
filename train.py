@@ -155,6 +155,7 @@ for index, task in enumerate(tasks):
                                                                                                    no_of_tasks,
                                                                                                    str(e))
         print(error_notification)
-        send_email('One of the task has stopped due to error, {} of {}'.format(index+1, no_of_tasks), error_notification)
+        send_email('The task on {} has stopped due to error, {} of {}'.format(host_name, index+1, no_of_tasks),
+                   error_notification)
 send_email('The task on {} has ended, total trainings: {}.'.format(host_name, no_of_tasks),
            'Please login to see the output', files=['./nohup.log'])
