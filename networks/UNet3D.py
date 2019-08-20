@@ -114,8 +114,8 @@ class UNet3D(tf.keras.Model):
         conv3d_transpose = self._add_regularization_layer(conv3d_transpose, name_suffix=conv3d_transpose_layer_name)
         return conv3d_transpose
 
-    def _get_max_pool_3d(self, filters, pool_size=(2, 2, 1), strides=(2, 2, 1), padding='same',
-                         name_prefix='l_'):
+    def _get_max_pool_3d_layer(self, filters, pool_size=(2, 2, 1), strides=(2, 2, 1), padding='same',
+                               name_prefix='l_'):
 
         maxpool_3d_layer_name = name_prefix + "MaxPool3D_{}".format(filters)
 
@@ -138,7 +138,7 @@ class UNet3D(tf.keras.Model):
             filters = 32 * 2 ** depth
             first_layer = self._get_convolution_block(input_layer=current_layer, filters=filters)
             if depth < self.depth - 1:
-                current_layer = self._get_max_pool_3d(filters=filters)(first_layer)
+                current_layer = self._get_max_pool_3d_layer(filters=filters)(first_layer)
                 level.append([first_layer, current_layer])
             else:
                 current_layer = first_layer

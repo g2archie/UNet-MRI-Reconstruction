@@ -12,32 +12,35 @@ from utils import extract_images
 from utils import get_hostname
 from utils import load_training_settings
 from utils import write_to_h5
-from loss.custom_losses import *
+from loss.custom_loss import *
 from metrics.custom_metrics import *
-
-host_name = get_hostname()
-
-# tf.keras.backend.set_floatx('float32')
-tasks = load_training_settings()
-no_of_tasks = len(tasks)
 
 NETWORK_TYPES = {'UNet3D': UNet3D, 'UNet2D1D': UNet2D1D, 'UNet3D_old': UNet3D_old, 'UNet2D2D': UNet2D2D}
 OPTIMIZER_TYPES = {'Adam': tf.keras.optimizers.Adam, 'RMSprop': tf.keras.optimizers.RMSprop}
 LOSS_TYPES = {'ssim_loss': ssim_loss, 'psnr_loss': psnr_loss}
 METRICS_TYPES = {'ssim': ssim, 'psnr': psnr}
 
+SEND_SUMMARY = True
+host_name = get_hostname()
 
-send_email('The task on {} has started, total tasks: {}.'.format(host_name, no_of_tasks),
-           'Details of the training are in the attachment ', files=['./config/training_config.yaml'])
+tasks = load_training_settings()
+no_of_tasks = len(tasks)
+
+if SEND_SUMMARY:
+    send_email('The task on {} has started, total tasks: {}.'.format(host_name, no_of_tasks),
+               'Details of the training are in the attachment ', files=['./config/training_config.yaml'])
 
 for index, task in enumerate(tasks):
 
     try:
-        tf.keras.backend.clear_session()
+        # Allow growth for GPU Memory
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
-        tf.keras.backend.set_session(tf.Session(config=config))
+        sess = tf.Session(config=config)
+        # tf.keras.backend.set_floatx('float32')
+        tf.keras.backend.set_session(sess)
 
+        # Define Folders for the output
         task_name = task['task_name']
         task_type = task['task_type']
         OUTPUT_DIR = os.path.join(os.path.abspath(task['output_data_dir']), task_name,
@@ -52,6 +55,7 @@ for index, task in enumerate(tasks):
         checkpoint_path = os.path.join(OUTPUT_DIR, "checkpoints/cp-{epoch:04d}-ssim-{val_ssim:.4f}.ckpt")
         checkpoint_dir = os.path.dirname(checkpoint_path)
 
+        # Load corresponding data depending on the type of task
         if task_type in ['train', 'train_and_predict']:
             x_train = extract_images(task['input_data_path']['x_train'], 'imagesRecon')
             y_train = extract_images(task['input_data_path']['y_train'], 'imagesTrue')
@@ -64,10 +68,11 @@ for index, task in enumerate(tasks):
             y_test = extract_images(task['input_data_path']['y_test'], 'imagesTrue')
             input_data_shape = x_test.shape
 
+        # Load neural network settings
         network_settings = task['network_settings']
 
+        # Create callback list. Checkpoint, tensorbaord and earlystopping callback are added by default.
         callback_list = []
-
         cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path, monitor='val_ssim', verbose=1,
                                                          save_weights_only=True)
         callback_list.append(cp_callback)
@@ -76,18 +81,19 @@ for index, task in enumerate(tasks):
                                                               batch_size=network_settings['batch_size'])
         callback_list.append(tensorboard_callback)
         if network_settings['early_stopping']['use']:
-            validation_callback = tf.keras.callbacks.EarlyStopping(monitor='val_ssim',
-                                                                   patience=network_settings['early_stopping']['patience'],
-                                                                   min_delta=network_settings['early_stopping']['min_delta'],
-                                                                   mode='max'
-                                                                   )
-            callback_list.append(validation_callback)
+            earlystopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_ssim',
+                                                                      patience=network_settings['early_stopping']['patience'],
+                                                                      min_delta=network_settings['early_stopping']['min_delta'],
+                                                                      mode='max'
+                                                                      )
+            callback_list.append(earlystopping_callback)
 
+        # Create the optimizer and the model from the configuration file.
         optimizer = OPTIMIZER_TYPES[network_settings['optimizer']['type']](network_settings['optimizer']['learning_rate'])
 
         model = NETWORK_TYPES[network_settings['network_type']](network_settings['regularization']['type'],
                                                                 network_settings['regularization']['parameters'])
-
+        # Set the loss and the metrics from the configuration file.
         loss_name = network_settings['loss']
         if loss_name in LOSS_TYPES:
             loss = LOSS_TYPES[loss_name]
@@ -101,6 +107,7 @@ for index, task in enumerate(tasks):
             else:
                 metrics.append(metric_name)
 
+        # Compile and build the model.
         model.compile(optimizer=optimizer,
                       loss=loss,
                       metrics=metrics)
@@ -118,6 +125,9 @@ for index, task in enumerate(tasks):
             send_email(start_notification,
                        'Please see the details of settings in the previous email')
 
+        # Fit the model and save the model weights, the pb file for tensorflow serving and the training history dict
+        # into a pickle file.
+
         if task_type in ['train', 'train_and_predict']:
             history = model.fit(x_train, y_train, batch_size=network_settings['batch_size'],
                                 epochs=network_settings['epochs'],
@@ -130,10 +140,12 @@ for index, task in enumerate(tasks):
             with open(training_history_dict, 'wb') as file_pi:
                 pickle.dump(history.history, file_pi)
 
+        # Load the network weight
         if task_type == 'predict':
             saved_network_weights_path = task['input_data_path']['saved_network_weights']
             model.load_weights(saved_network_weights_path)
 
+        # Predict the x_test and save the result into a h5 file for later visualization
         if task_type in ['predict', 'train_and_predict']:
             result = model.predict(x_test, batch_size=network_settings['batch_size'], verbose=0)
             result_dict = {
@@ -157,5 +169,9 @@ for index, task in enumerate(tasks):
         print(error_notification)
         send_email('The task on {} has stopped due to error, {} of {}'.format(host_name, index+1, no_of_tasks),
                    error_notification)
-send_email('The task on {} has ended, total trainings: {}.'.format(host_name, no_of_tasks),
-           'Please login to see the output', files=['./nohup.log'])
+    finally:
+        tf.keras.backend.clear_session()
+
+if SEND_SUMMARY:
+    send_email('The task on {} has ended, total trainings: {}.'.format(host_name, no_of_tasks),
+               'Please login to see the output', files=['./nohup.log'])
