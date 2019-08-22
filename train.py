@@ -8,10 +8,11 @@ from networks.UNet3D import UNet3D
 from networks.UNet2D2D import UNet2D2D
 
 from utils import send_email
-from utils import extract_images
-from utils import get_hostname
-from utils import load_training_settings
 from utils import write_to_h5
+from utils import get_hostname
+from utils import extract_images
+from utils import load_training_settings
+
 from loss.custom_loss import *
 from metrics.custom_metrics import *
 

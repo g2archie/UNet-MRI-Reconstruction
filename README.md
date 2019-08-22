@@ -55,7 +55,7 @@ A typical training task will look like below.
     regularization:
       type: 'l2'
       parameters:
-			      - 1.0e-05
+                  - 1.0e-05
     early_stopping:
       use: true
       patience: 2

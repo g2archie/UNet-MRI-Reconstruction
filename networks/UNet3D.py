@@ -23,7 +23,9 @@ class UNet3D(tf.keras.Model):
         self.conv3d_1_1 = tf.keras.layers.Conv3D(filters=1, kernel_size=3, strides=1, padding='same', name='conv3d_1_1',
                                                  kernel_regularizer=self.kernel_regularizer)
 
-    def _add_regularization_layer(self, input_layer, name_suffix):
+    def _add_regularization_layer(self, input_layer, name_suffix, activation='relu'):
+
+        regularization_layer = None
 
         if self.regularization == 'batch_norm':
             layer_name = "Batch_Norm_" + name_suffix
@@ -32,7 +34,7 @@ class UNet3D(tf.keras.Model):
             else:
                 batch_norm_layer = tf.keras.layers.BatchNormalization(-1, name=layer_name)
                 setattr(self, layer_name, batch_norm_layer)
-            return batch_norm_layer(input_layer)
+            regularization_layer = batch_norm_layer(input_layer)
 
         elif self.regularization == 'instance_norm':
             layer_name = "Instance_Norm_" + name_suffix
@@ -41,7 +43,7 @@ class UNet3D(tf.keras.Model):
             else:
                 instance_norm_layer = InstanceNormalization(-1, name=layer_name)
                 setattr(self, layer_name, instance_norm_layer)
-            return instance_norm_layer(input_layer)
+            regularization_layer = instance_norm_layer(input_layer)
 
         elif self.regularization == 'dropout':
             layer_name = "Dropout_" + name_suffix
@@ -50,7 +52,8 @@ class UNet3D(tf.keras.Model):
             else:
                 dropout_layer = tf.keras.layers.Dropout(*self.regularization_parameters, name=layer_name)
                 setattr(self, layer_name, dropout_layer)
-            return dropout_layer(input_layer)
+            regularization_layer = dropout_layer(input_layer)
+
         elif self.regularization == 'dropblock':
             layer_name = "DropBlock_" + name_suffix
             if hasattr(self, layer_name):
@@ -58,12 +61,16 @@ class UNet3D(tf.keras.Model):
             else:
                 dropblock_layer = DropBlock3D(*self.regularization_parameters, name=layer_name)
                 setattr(self, layer_name, dropblock_layer)
-            return dropblock_layer(input_layer)
+            regularization_layer = dropblock_layer(input_layer)
 
-        return input_layer
+        if regularization_layer is not None:
+            output = tf.keras.layers.Activation(activation=activation)(regularization_layer)
+        else:
+            output = tf.keras.layers.Activation(activation=activation)(input_layer)
+        return output
 
     def _get_convolution_block(self, input_layer, filters, kernel_size=3, strides=1, padding='same',
-                               name_prefix='l_', activation=tf.keras.activations.relu):
+                               name_prefix='l_', activation='relu'):
 
         conv3d_layer_name_1 = name_prefix + "Conv3D_{}_1".format(filters)
 
@@ -71,13 +78,13 @@ class UNet3D(tf.keras.Model):
             conv3d_1 = getattr(self, conv3d_layer_name_1)
         else:
             conv3d_1 = tf.keras.layers.Conv3D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
-                                              name=conv3d_layer_name_1, activation=activation,
+                                              name=conv3d_layer_name_1,
                                               kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
 
             setattr(self, conv3d_layer_name_1, conv3d_1)
 
         conv3d_1 = conv3d_1(input_layer)
-        conv3d_1 = self._add_regularization_layer(conv3d_1, name_suffix=conv3d_layer_name_1)
+        conv3d_1 = self._add_regularization_layer(conv3d_1, name_suffix=conv3d_layer_name_1, activation=activation)
 
         conv3d_layer_name_2 = name_prefix + "Conv3D_{}_2".format(filters)
 
@@ -85,18 +92,18 @@ class UNet3D(tf.keras.Model):
             conv3d_2 = getattr(self, conv3d_layer_name_2)
         else:
             conv3d_2 = tf.keras.layers.Conv3D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
-                                              name=conv3d_layer_name_2, activation=activation,
+                                              name=conv3d_layer_name_2,
                                               kernel_regularizer=self.kernel_regularizer, data_format='channels_last')
 
             setattr(self, conv3d_layer_name_2, conv3d_2)
 
         conv3d_2 = conv3d_2(conv3d_1)
-        conv3d_2 = self._add_regularization_layer(conv3d_2, name_suffix=conv3d_layer_name_2)
+        conv3d_2 = self._add_regularization_layer(conv3d_2, name_suffix=conv3d_layer_name_2, activation=activation)
 
         return conv3d_2
 
     def _get_convolution_transpose_layer(self, input_layer, filters, kernel_size=3, strides=(2, 2, 1), padding='same',
-                                         name_prefix='r_', activation=tf.keras.activations.relu):
+                                         name_prefix='r_', activation='relu'):
 
         conv3d_transpose_layer_name = name_prefix + "UpConv3D_{}".format(filters)
         if hasattr(self, conv3d_transpose_layer_name):
@@ -104,14 +111,14 @@ class UNet3D(tf.keras.Model):
         else:
             conv3d_transpose = tf.keras.layers.Convolution3DTranspose(filters=filters, kernel_size=kernel_size,
                                                                       strides=strides, padding=padding,
-                                                                      activation=activation,
                                                                       name=conv3d_transpose_layer_name,
                                                                       kernel_regularizer=self.kernel_regularizer)
 
             setattr(self, conv3d_transpose_layer_name, conv3d_transpose)
 
         conv3d_transpose = conv3d_transpose(input_layer)
-        conv3d_transpose = self._add_regularization_layer(conv3d_transpose, name_suffix=conv3d_transpose_layer_name)
+        conv3d_transpose = self._add_regularization_layer(conv3d_transpose, name_suffix=conv3d_transpose_layer_name,
+                                                          activation=activation)
         return conv3d_transpose
 
     def _get_max_pool_3d_layer(self, filters, pool_size=(2, 2, 1), strides=(2, 2, 1), padding='same',
@@ -152,7 +159,7 @@ class UNet3D(tf.keras.Model):
             current_layer = self._get_convolution_block(input_layer=concat_layer, filters=filters, name_prefix='r_')
 
         conv3d_1_1 = self.conv3d_1_1(current_layer)
-        conv3d_1_1 = self._add_regularization_layer(conv3d_1_1, name_suffix='conv3d_1_1')
+        conv3d_1_1 = self._add_regularization_layer(conv3d_1_1, name_suffix='conv3d_1_1', activation='relu')
 
         sum = tf.keras.layers.add([conv3d_1_1, inputs])
         update = tf.keras.activations.relu(sum)
