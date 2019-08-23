@@ -1,11 +1,11 @@
-from datetime import datetime
-import pickle
 import os
+import pickle
+from datetime import datetime
 
-from networks.UNet3D_old import UNet3D_old
-from networks.UNet2D1D import UNet2D1D
 from networks.UNet3D import UNet3D
+from networks.UNet2D1D import UNet2D1D
 from networks.UNet2D2D import UNet2D2D
+from networks.UNet3D_old import UNet3D_old
 
 from utils import send_email
 from utils import write_to_h5
@@ -16,13 +16,12 @@ from utils import load_training_settings
 from loss.custom_loss import *
 from metrics.custom_metrics import *
 
+host_name = get_hostname()
 NETWORK_TYPES = {'UNet3D': UNet3D, 'UNet2D1D': UNet2D1D, 'UNet3D_old': UNet3D_old, 'UNet2D2D': UNet2D2D}
 OPTIMIZER_TYPES = {'Adam': tf.keras.optimizers.Adam, 'RMSprop': tf.keras.optimizers.RMSprop}
 LOSS_TYPES = {'ssim_loss': ssim_loss, 'psnr_loss': psnr_loss}
 METRICS_TYPES = {'ssim': ssim, 'psnr': psnr}
-
 SEND_SUMMARY = True
-host_name = get_hostname()
 
 tasks = load_training_settings()
 no_of_tasks = len(tasks)
@@ -48,29 +47,31 @@ for index, task in enumerate(tasks):
                                   datetime.now().strftime("%Y%m%d-%H%M%S"))
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         tensorboard_logdir = os.path.join(OUTPUT_DIR, 'logs/')
+        plots_dir = os.path.join(OUTPUT_DIR, 'plots/')
         model_weights_dir = os.path.join(OUTPUT_DIR, 'model_weights/')
         tf_serving_model_dir = os.path.join(OUTPUT_DIR, 'tf_serving/')
         training_history_dict = os.path.join(OUTPUT_DIR, 'training_history')
         prediction_dir = os.path.join(OUTPUT_DIR, 'predictions/')
         os.makedirs(prediction_dir)
+        os.makedirs(plots_dir)
         checkpoint_path = os.path.join(OUTPUT_DIR, "checkpoints/cp-{epoch:04d}-ssim-{val_ssim:.4f}.ckpt")
         checkpoint_dir = os.path.dirname(checkpoint_path)
 
-        # Load corresponding data depending on the type of task
+        # Load neural network settings, set the batch size
+        network_settings = task['network_settings']
+        batch_size = network_settings['batch_size']
+
+        # Load corresponding data depending on the type of the task
         if task_type in ['train', 'train_and_predict']:
             x_train = extract_images(task['input_data_path']['x_train'], 'imagesRecon')
             y_train = extract_images(task['input_data_path']['y_train'], 'imagesTrue')
             x_validation = extract_images(task['input_data_path']['x_val'], 'imagesRecon')
             y_validation = extract_images(task['input_data_path']['y_val'], 'imagesTrue')
-            input_data_shape = x_train.shape
+            # input_data_shape = x_train.shape
 
         if task_type in ['predict', 'train_and_predict']:
             x_test = extract_images(task['input_data_path']['x_test'], 'imagesRecon')
             y_test = extract_images(task['input_data_path']['y_test'], 'imagesTrue')
-            input_data_shape = x_test.shape
-
-        # Load neural network settings
-        network_settings = task['network_settings']
 
         # Create callback list. Checkpoint, tensorbaord and earlystopping callback are added by default.
         callback_list = []
@@ -78,19 +79,22 @@ for index, task in enumerate(tasks):
                                                          save_weights_only=True)
         callback_list.append(cp_callback)
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=tensorboard_logdir, histogram_freq=2,
-                                                              write_graph=True, write_grads=True, write_images=True,
-                                                              batch_size=network_settings['batch_size'])
+                                                              write_graph=False, write_grads=False, write_images=True,
+                                                              batch_size=batch_size)
         callback_list.append(tensorboard_callback)
         if network_settings['early_stopping']['use']:
             earlystopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_ssim',
-                                                                      patience=network_settings['early_stopping']['patience'],
-                                                                      min_delta=network_settings['early_stopping']['min_delta'],
+                                                                      patience=network_settings['early_stopping'][
+                                                                          'patience'],
+                                                                      min_delta=network_settings['early_stopping'][
+                                                                          'min_delta'],
                                                                       mode='max'
                                                                       )
             callback_list.append(earlystopping_callback)
 
         # Create the optimizer and the model from the configuration file.
-        optimizer = OPTIMIZER_TYPES[network_settings['optimizer']['type']](network_settings['optimizer']['learning_rate'])
+        optimizer = OPTIMIZER_TYPES[network_settings['optimizer']['type']](
+            network_settings['optimizer']['learning_rate'])
 
         model = NETWORK_TYPES[network_settings['network_type']](network_settings['regularization']['type'],
                                                                 network_settings['regularization']['parameters'])
@@ -109,17 +113,17 @@ for index, task in enumerate(tasks):
                 metrics.append(metric_name)
 
         # Compile and build the model.
+
         model.compile(optimizer=optimizer,
                       loss=loss,
                       metrics=metrics)
 
-        model.build(input_shape=(network_settings['batch_size'],
-                                 input_data_shape[1], input_data_shape[2], input_data_shape[3]))
-        start_notification = 'The {} of {} has been set up and ready for training on {} task {} of {}.'.format(task_type,
-                                                                                                               task_name,
-                                                                                                               host_name,
-                                                                                                               index + 1,
-                                                                                                               no_of_tasks)
+        start_notification = 'The {} of {} has been set up and ready for training on {} task {} of {}.'.format(
+            task_type,
+            task_name,
+            host_name,
+            index + 1,
+            no_of_tasks)
         print(start_notification)
 
         if task['email_notification']:
@@ -130,9 +134,9 @@ for index, task in enumerate(tasks):
         # into a pickle file.
 
         if task_type in ['train', 'train_and_predict']:
-            history = model.fit(x_train, y_train, batch_size=network_settings['batch_size'],
+            history = model.fit(x_train, y_train, batch_size=batch_size,
                                 epochs=network_settings['epochs'],
-                                validation_data=(x_validation, y_validation),
+                                validation_data=((x_validation, y_validation)),
                                 callbacks=callback_list, verbose=2)
 
             model.save_weights(model_weights_dir, save_format='tf')
@@ -148,12 +152,16 @@ for index, task in enumerate(tasks):
 
         # Predict the x_test and save the result into a h5 file for later visualization
         if task_type in ['predict', 'train_and_predict']:
-            result = model.predict(x_test, batch_size=network_settings['batch_size'], verbose=0)
+            x_test = extract_images(task['input_data_path']['x_test'], 'imagesRecon')
+            y_test = extract_images(task['input_data_path']['y_test'], 'imagesTrue')
+
+            result = model.predict(x_test, batch_size=batch_size, verbose=0)
             result_dict = {
                 'input': x_test,
                 'result': result,
                 'truth': y_test
             }
+
             write_to_h5(prediction_dir + 'result.h5', result_dict)
         end_notification = 'The {} task of {} has ended on {}, task {} of {}.'.format(task_type, task_name, host_name,
                                                                                       index + 1,
@@ -164,11 +172,11 @@ for index, task in enumerate(tasks):
                        'Please see the details of settings in the previous email')
 
     except Exception as e:
-        error_notification = "When completing the task {} of {}, error: {}, task stopped. ".format(index+1,
+        error_notification = "When completing the task {} of {}, error: {}, task stopped. ".format(index + 1,
                                                                                                    no_of_tasks,
                                                                                                    str(e))
         print(error_notification)
-        send_email('The task on {} has stopped due to error, {} of {}'.format(host_name, index+1, no_of_tasks),
+        send_email('The task on {} has stopped due to error, {} of {}'.format(host_name, index + 1, no_of_tasks),
                    error_notification)
     finally:
         tf.keras.backend.clear_session()

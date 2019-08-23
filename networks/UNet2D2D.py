@@ -171,7 +171,6 @@ class UNet2D2D(tf.keras.Model):
         return maxpool_3d
 
     def call(self, inputs):
-
         inputs = tf.keras.backend.expand_dims(inputs, axis=-1)
         current_layer = inputs
         level = []

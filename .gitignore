@@ -2,7 +2,7 @@
 .ipynb_checkpoints/
 config/email_config.yaml
 data/
-**/__pycache__
+**__pycache__/
 
 *.ipynb
 *.zip

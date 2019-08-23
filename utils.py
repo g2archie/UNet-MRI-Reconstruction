@@ -1,9 +1,14 @@
 from os.path import basename
+from os.path import join
+
 import smtplib
 import yaml
 import h5py
 import numpy
 import socket
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
@@ -31,19 +36,16 @@ def extract_images(filename, image_name):
 
 
 def load_training_settings(file='./config/training_config.yaml'):
-
     with open(file, 'r') as f:
         return yaml.load(f, Loader=yaml.Loader)
 
 
 def load_email_server_settings():
-
     with open('./config/email_config.yaml', 'r') as f:
         return yaml.load(f, Loader=yaml.Loader)
 
 
 def send_email(subject, message, files=None):
-
     config = load_email_server_settings()
 
     email_server = smtplib.SMTP(config['smtp_server'], config['smtp_server_port'])
@@ -51,11 +53,11 @@ def send_email(subject, message, files=None):
 
     try:
         email_server.login(config['sender_email_address'], config['sender_email_password'])
-    except:
-        print("Cannot log in")
+    except Exception as e:
+        print("Cannot log in: {}".format(str(e)))
         return
 
-    msg = MIMEMultipart()       # create a message
+    msg = MIMEMultipart()  # create a message
 
     msg['From'] = config['sender_email_address']
     msg['To'] = config['receiver_email_address']
@@ -76,10 +78,32 @@ def send_email(subject, message, files=None):
 
     try:
         email_server.send_message(msg)
-    except:
-        print("Cannot send email")
+    except Exception as e:
+        print("Cannot send email, error : {}".format(str(e)))
         return
 
     email_server.quit()
 
+
+class DataGenerator(tf.keras.utils.Sequence):
+
+    def __init__(self, x_set, y_set, batch_size, shuffle=True):
+        self.x, self.y = x_set, y_set
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.indexes = np.arange(len(x_set))
+
+    def __len__(self):
+        return np.math.ceil(len(self.x) / self.batch_size)
+
+    def __getitem__(self, idx):
+        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
+
+        return np.array(batch_x), np.array(batch_y)
+
+    def on_epoch_end(self):
+
+        if self.shuffle:
+            np.random.shuffle(self.indexes)
 
