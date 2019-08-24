@@ -69,10 +69,6 @@ for index, task in enumerate(tasks):
             y_validation = extract_images(task['input_data_path']['y_val'], 'imagesTrue')
             # input_data_shape = x_train.shape
 
-        if task_type in ['predict', 'train_and_predict']:
-            x_test = extract_images(task['input_data_path']['x_test'], 'imagesRecon')
-            y_test = extract_images(task['input_data_path']['y_test'], 'imagesTrue')
-
         # Create callback list. Checkpoint, tensorbaord and earlystopping callback are added by default.
         callback_list = []
         cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path, monitor='val_ssim', verbose=1,
@@ -118,7 +114,7 @@ for index, task in enumerate(tasks):
                       loss=loss,
                       metrics=metrics)
 
-        start_notification = 'The {} of {} has been set up and ready for training on {} task {} of {}.'.format(
+        start_notification = 'The {} task  of {} has been set up and ready for training on {} task {} of {}.'.format(
             task_type,
             task_name,
             host_name,
