@@ -47,13 +47,11 @@ for index, task in enumerate(tasks):
                                   datetime.now().strftime("%Y%m%d-%H%M%S"))
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         tensorboard_logdir = os.path.join(OUTPUT_DIR, 'logs/')
-        plots_dir = os.path.join(OUTPUT_DIR, 'plots/')
         model_weights_dir = os.path.join(OUTPUT_DIR, 'model_weights/')
         tf_serving_model_dir = os.path.join(OUTPUT_DIR, 'tf_serving/')
         training_history_dict = os.path.join(OUTPUT_DIR, 'training_history')
         prediction_dir = os.path.join(OUTPUT_DIR, 'predictions/')
         os.makedirs(prediction_dir)
-        os.makedirs(plots_dir)
         checkpoint_path = os.path.join(OUTPUT_DIR, "checkpoints/cp-{epoch:04d}-ssim-{val_ssim:.4f}.ckpt")
         checkpoint_dir = os.path.dirname(checkpoint_path)
 
