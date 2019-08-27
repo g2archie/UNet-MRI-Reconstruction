@@ -1,6 +1,6 @@
 # UNet MRI Reconstruction
 ## Introduction
-Classic Cardiovascular Magnetic Resonance takes a long time to obtain images over multiple heart beats. Real-time CMR is faster, but the data acquired is often of low spatial and temporal resolution. In this project, three CNNs are used to produce MRI image reconstruction, namely, UNet3D, UNet2D1D, and UNet2D2D.  
+Classic Cardiovascular Magnetic Resonance takes a long time to obtain images over multiple heart beats. Real-time CMR is faster, but the data acquired is often of low spatial and temporal resolution. In this project, three UNets are used to produce MRI image reconstruction, namely, UNet3D, UNet2D1D, and UNet2D2D.  
 
 The configuration file training_config.yaml allows users to configure the training tasks and the hyperparameters in the network.  Tensorboard logs and Tensorflow serving models are produced in the output folder by default. 
 
@@ -8,7 +8,7 @@ The configuration file training_config.yaml allows users to configure the traini
 ## Installation
 
 ### Train your own models
-Install [CUDA Toolkit 10.0]([https://developer.nvidia.com/cuda-10.0-download-archive?](https://developer.nvidia.com/cuda-10.0-download-archive?)) as this is require for Tensorflow-gpu==1.14.0
+Install [CUDA Toolkit 10.0](https://developer.nvidia.com/cuda-10.0-download-archive?) as this is require for Tensorflow-gpu==1.14.0
 
 Create an Anaconda environment, then in the activated environment, run
 ```
@@ -21,17 +21,20 @@ If you want to use docker to serve your model or use my pre-trained model. Pleas
 
 ### Using Docker images
 
-A script is provided for you to run the Docker image on your machine.
+A script _run_docker.sh_ is provided for you to run the Docker image on your machine.
 
 Example Usage:
 
 ``` bash
 #!/bin/bash 
 
-SOURCE='/home/wentao/tensorflow_serving_models/models/UNet2D1D'
-TARGET='/models/UNet2D1D'
-MODEL_NAME='UNet2D1D'
-docker run --runtime=nvidia -p 8501:8501 --mount type=bind,source=$SOURCE,target=$TARGET -e MODEL_NAME=$MODEL_NAME -t tensorflow/serving:latest-gpu &
+MODEL_NAME='UNet2D2D'
+SOURCE='/home/wentao/tensorflow_serving_model/models/'$MODEL_NAME
+TARGET='/models/'$MODEL_NAME
+
+docker run --runtime=nvidia -p 8501:8501 \
+--mount type=bind,source=$SOURCE,target=$TARGET -e\
+MODEL_NAME=$MODEL_NAME -t tensorflow/serving:latest-gpu &
 ```
 In
  ```
@@ -128,7 +131,7 @@ python train.py
 ``` 
 or modify the bash script train.sh to activate your virtual environment then run the training so that you can type 
 ```
-./train.sh
+sudo ./train.sh
 ```
 You can also specify the GPUs you want to use in the bash script file. I have not added tf.distribute.MirroredStrategy due to I has only got one GPU now.
 
@@ -137,7 +140,7 @@ My machine has 16 GB RAM and RTX 2060 8GB graphics card, and most of the trainin
 If you want to drop the SSH connection after you set up the job, run.
 
 ```
-./nohup.sh
+sudo ./nohup.sh
 ``` 
 ## Output files
 The output folder looks like this by default.
@@ -158,12 +161,13 @@ If you run a 'train_and_predict' task by default, you will get
 
 ## Visualization of the result
 
-The evaluation result of my experiments is provided in a pickle file which contains an OrderedDict object.
+The evaluation result of my experiments is provided in a pickle file,## _combined_evaluation_result.pkl_ , which contains an OrderedDict object.
 
 In this OrderedDict, the result is stored in this format:
 ``` Python
 # task_name: [mse, nrmse, psnr, ssim, the_highest_ssim, the_lowest_ssim]
-# The best result by ssim is in the first entry, the second-best by ssim is in the second entry etc.
+# The best result by ssim is in the first entry, 
+# the second-best by ssim is in the second entry etc.
 
 # For example, the first two entries are:
 OrderedDict([('UNet3D_SSIM_loss_no_regularization',
@@ -192,3 +196,8 @@ tensorboard --_logdir_=/path/to/the/log/dir
 ### Jupyter notebook
 
 I provided a Jupyter Notebook _network_result_visualiztion.ipynb_ to visualize the result. It plots the Input image, reconstrued image and the output image. It also plots histograms for mse, nrmse, psnr and ssim.
+
+For example, UNet2D2D_SSIM_loss_no_regularization_best_ssim_0.9523:
+![UNet2D2D_SSIM_loss_no_regularization_best_ssim_0.9523](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/UNet2D2D_SSIM_loss_no_regularization_best_ssim_0.9523.jpg =600x600)
+UNet2D2D_SSIM_loss_no_regularization_hist_SSIM:
+![histogram](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/UNet2D2D_SSIM_loss_no_regularization_hist_SSIM.jpg =600x400)
