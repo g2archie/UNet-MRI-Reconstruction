@@ -51,7 +51,7 @@ for index, task in enumerate(tasks):
         tf_serving_model_dir = os.path.join(OUTPUT_DIR, 'tf_serving/')
         training_history_dict = os.path.join(OUTPUT_DIR, 'training_history')
         prediction_dir = os.path.join(OUTPUT_DIR, 'predictions/')
-        os.makedirs(prediction_dir)
+
         checkpoint_path = os.path.join(OUTPUT_DIR, "checkpoints/cp-{epoch:04d}-ssim-{val_ssim:.4f}.ckpt")
         checkpoint_dir = os.path.dirname(checkpoint_path)
 
@@ -155,7 +155,7 @@ for index, task in enumerate(tasks):
                 'result': result,
                 'truth': y_test
             }
-
+            os.makedirs(prediction_dir)
             write_to_h5(prediction_dir + 'result.h5', result_dict)
         end_notification = 'The {} task of {} has ended on {}, task {} of {}.'.format(task_type, task_name, host_name,
                                                                                       index + 1,
