@@ -88,7 +88,7 @@ A typical training task will look like below.
 
 * task_name is used in notifications and constructing the output folder.
 * task_type has three available options: 'train', which trains and store the model but not predicting the x_test. 'train_and_predict', which also produces a result.h5 file after prediction. 'predict', which only loads the model's weights and perform prediction.
-* email_notification If this is set to True, you will receive email notifications at the beginning of the job and *each task*, when any exception triggered, the end of *each task* and the job.
+* email_notification If this is set to True, you will receive email notifications at the beginning of the job and *each task*, when any exception is triggered, the end of *each task* and the job.
 * input_data_path: These are for the input data paths.
 * network_type:  It specifies the model to use in the task, available options are UNet3D, UNet2D1D, UNet2D2D and UNet3D_old.
 * batch_size:  Network hyperparameters.  
@@ -123,6 +123,8 @@ then rename it to
 ```
 email_config.yaml
 ```
+
+It sends you emails when the task starts, ends and when it catches an exception.
 ## Run the training
 You can either activate your virtual environment and run 
 ```
@@ -198,6 +200,6 @@ tensorboard --_logdir_=/path/to/the/log/dir
 I provided a Jupyter Notebook _network_result_visualiztion.ipynb_ to visualize the result. It plots the Input image, reconstrued image and the output image. It also plots histograms for mse, nrmse, psnr and ssim.
 
 For example, UNet2D2D_SSIM_loss_no_regularization_best_ssim_0.9523:
-![UNet2D2D_SSIM_loss_no_regularization_best_ssim_0.9523](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/UNet2D2D_SSIM_loss_no_regularization_best_ssim_0.9523.jpg =600x600)
+![UNet2D2D_SSIM_loss_no_regularization_best_ssim_0.9523](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/UNet2D2D_SSIM_loss_no_regularization_best_ssim_0.9523.jpg)
 UNet2D2D_SSIM_loss_no_regularization_hist_SSIM:
-![histogram](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/UNet2D2D_SSIM_loss_no_regularization_hist_SSIM.jpg =600x400)
+![histogram](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/UNet2D2D_SSIM_loss_no_regularization_hist_SSIM.jpg)
