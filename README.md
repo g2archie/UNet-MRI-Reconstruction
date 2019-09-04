@@ -1,6 +1,8 @@
 # UNet MRI Reconstruction
 ## Introduction
-Classic Cardiovascular Magnetic Resonance takes a long time to obtain images over multiple heart beats. Real-time CMR is faster, but the data acquired is often of low spatial and temporal resolution. In this project, three UNets are used to produce MRI image reconstruction, namely, UNet3D, UNet2D1D, and UNet2D2D.  
+Classic Cardiovascular Magnetic Resonance takes a long time to obtain images over multiple heartbeats. Real-time CMR is faster than the classic one, but the data acquired is often of low spatial and temporal resolution. In this project, three UNets are used to produce MRI image reconstruction, namely, UNet3D, UNet2D1D, and UNet2D2D.  
+
+Comparison of different settings:
 
 The configuration file training_config.yaml allows users to configure the training tasks and the hyperparameters in the network.  Tensorboard logs and Tensorflow serving models are produced in the output folder by default. 
 
@@ -14,7 +16,7 @@ Create an Anaconda environment, then in the activated environment, run
 ```
 pip install -r requirements.txt
 ```
-This should install all the dependencies required for training the model. 
+The above command should install all the dependencies required for training the model. 
 
 ### Docker installation
 If you want to use docker to serve your model or use my pre-trained model. Please install [Docker](https://docs.docker.com/install/), [Nvidia-Docker](https://github.com/NVIDIA/nvidia-docker)  and [Nvidia-container-runtime](https://github.com/NVIDIA/nvidia-container-runtime)  by following the installation instruction provided on your machine.
@@ -48,6 +50,9 @@ sudo ./run_docker.sh
 ```
 
 Open the example Jupyter Notebook _docker_prediction.ipynb_ and have fun!
+
+Example predictions:
+
 
 
 ## Training Configuration 
@@ -88,7 +93,7 @@ A typical training task will look like below.
 
 * task_name is used in notifications and constructing the output folder.
 * task_type has three available options: 'train', which trains and store the model but not predicting the x_test. 'train_and_predict', which also produces a result.h5 file after prediction. 'predict', which only loads the model's weights and perform prediction.
-* email_notification If this is set to True, you will receive email notifications at the beginning of the job and *each task*, when any exception is triggered, the end of *each task* and the job.
+* email_notification If this is set to True, you will receive email notifications at the beginning of the job and *each task*, when an exception is triggered, the end of *each task* and the job.
 * input_data_path: These are for the input data paths.
 * network_type:  It specifies the model to use in the task, available options are UNet3D, UNet2D1D, UNet2D2D and UNet3D_old.
 * batch_size:  Network hyperparameters.  
@@ -131,7 +136,7 @@ You can either activate your virtual environment and run
 conda activate python3.7
 python train.py
 ``` 
-or modify the bash script train.sh to activate your virtual environment then run the training so that you can type 
+alternatively, modify the bash script train.sh to activate your virtual environment then run the training so that you can type 
 ```
 sudo ./train.sh
 ```
@@ -161,7 +166,7 @@ If you run a 'train_and_predict' task by default, you will get
 * **checkpoints** folder, which contains the weights of the model after each epoch.
 * **training_history** pickle file, which contains the loss of the training in a python dictionary.
 
-## Visualization of the result
+## Visualisation of the result
 
 The evaluation result of my experiments is provided in a pickle file,## _combined_evaluation_result.pkl_ , which contains an OrderedDict object.
 
@@ -188,18 +193,17 @@ OrderedDict([('UNet3D_SSIM_loss_no_regularization',
                0.7698848257240287]))
 ```
 
-If you want to find the best model from your trainings, I have also provided two Jupyter Notebook files to help you do that,  _calculate_metrics.ipynb_ and _combine_metrics.ipynb_.
+If you want to find the best model from your training, I have also provided two Jupyter Notebook files to help you do that,  _calculate_metrics.ipynb_ and _combine_metrics.ipynb_.
 ### Tensorboard
-For individual trainings,  run the following command in 
+For individual training,  run the following command in 
 ```
 tensorboard --_logdir_=/path/to/the/log/dir
 ```
 
 ### Jupyter notebook
 
-I provided a Jupyter Notebook _network_result_visualiztion.ipynb_ to visualize the result. It plots the Input image, reconstrued image and the output image. It also plots histograms for mse, nrmse, psnr and ssim.
+I provided a Jupyter Notebook _network_result_visualiztion.ipynb_ to visualise the result. It plots the Input image, reconstrued image and the output image. It also plots histograms for mse, nrmse, psnr and ssim.
 
-For example, UNet2D2D_SSIM_loss_no_regularization_best_ssim_0.9523:
-![UNet2D2D_SSIM_loss_no_regularization_best_ssim_0.9523](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/UNet2D2D_SSIM_loss_no_regularization_best_ssim_0.9523.jpg)
-UNet2D2D_SSIM_loss_no_regularization_hist_SSIM:
-![histogram](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/UNet2D2D_SSIM_loss_no_regularization_hist_SSIM.jpg)
+Histogram of the SSIM:
+
+Histogram of the PSNR:
