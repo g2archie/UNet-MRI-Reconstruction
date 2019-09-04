@@ -1,8 +1,16 @@
+
 # UNet MRI Reconstruction
 ## Introduction
 Classic Cardiovascular Magnetic Resonance takes a long time to obtain images over multiple heartbeats. Real-time CMR is faster than the classic one, but the data acquired is often of low spatial and temporal resolution. In this project, three UNets are used to produce MRI image reconstruction, namely, UNet3D, UNet2D1D, and UNet2D2D.  
 
-Comparison of different settings:
+I picked the top 3 settings by SSIM value in each network architecture, and the models were trained only on 66% of the original dataset. Comparison of different settings:
+![Result of the experiments](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/experiment_result.png)
+
+Note that the proposed UNet2D2D network architecture has only 1/3 parameters of UNet3D, and the SSIM loss is dominant among other loss functions.
+
+Best reconstructed images of each network architecture:
+![Best reconstructed images](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/best_reconstructed_images.jpg)
+
 
 The configuration file training_config.yaml allows users to configure the training tasks and the hyperparameters in the network.  Tensorboard logs and Tensorflow serving models are produced in the output folder by default. 
 
@@ -52,7 +60,7 @@ sudo ./run_docker.sh
 Open the example Jupyter Notebook _docker_prediction.ipynb_ and have fun!
 
 Example predictions:
-
+![Docker Prediction](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/docker_prediction_UNet2D2D.jpg)
 
 
 ## Training Configuration 
@@ -205,5 +213,6 @@ tensorboard --_logdir_=/path/to/the/log/dir
 I provided a Jupyter Notebook _network_result_visualiztion.ipynb_ to visualise the result. It plots the Input image, reconstrued image and the output image. It also plots histograms for mse, nrmse, psnr and ssim.
 
 Histogram of the SSIM:
-
+![ssim-hist](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/SSIM_hist.jpg)
 Histogram of the PSNR:
+![psnr-hist](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/PSNR_hist.jpg)
