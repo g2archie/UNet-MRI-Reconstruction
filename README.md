@@ -60,6 +60,7 @@ sudo ./run_docker.sh
 Open the example Jupyter Notebook _docker_prediction.ipynb_ and have fun!
 
 Example predictions:
+
 ![Docker Prediction](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/docker_prediction_UNet2D2D.jpg)
 
 
