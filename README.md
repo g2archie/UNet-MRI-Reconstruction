@@ -1,9 +1,10 @@
 
 # UNet MRI Reconstruction
 ## Introduction
-Classic Cardiovascular Magnetic Resonance takes a long time to obtain images over multiple heartbeats. Real-time CMR is faster than the classic one, but the data acquired is often of low spatial and temporal resolution. In this project, three UNets are used to produce MRI image reconstruction, namely, UNet3D, UNet2D1D, and UNet2D2D.  
+Classic Cardiovascular Magnetic Resonance takes a long time to obtain images over multiple heartbeats. Real-time CMR is faster than the classic one, but the data acquired is often of low spatial and temporal resolution. In this project, three UNets are used to produce MRI image reconstruction, namely, UNet3D, UNet2D1D, and UNet2D2D(below).  
 
-I picked the top 3 settings by SSIM value in each network architecture, and the models were trained only on 66% of the original dataset. Comparison of different settings:
+![UNet2D2D](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/UNet2D2D.png)
+The models were trained only on 66% of the original dataset, and I picked the top 3 settings by SSIM value in each network architecture. Comparison of different settings:
 ![Result of the experiments](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/experiment_result.png)
 
 Note that the proposed UNet2D2D network architecture has only 1/3 parameters of UNet3D, and the SSIM loss is dominant among other loss functions.
