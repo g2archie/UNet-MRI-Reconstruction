@@ -73,7 +73,7 @@ for index, task in enumerate(tasks):
                                                          save_weights_only=True)
         callback_list.append(cp_callback)
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=tensorboard_logdir, histogram_freq=2,
-                                                              write_graph=False, write_grads=False, write_images=True,
+                                                              write_graph=True, write_grads=True, write_images=True,
                                                               batch_size=batch_size)
         callback_list.append(tensorboard_callback)
         if network_settings['early_stopping']['use']:

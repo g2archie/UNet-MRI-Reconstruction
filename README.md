@@ -1,4 +1,5 @@
 
+
 # UNet MRI Reconstruction
 ## Introduction
 Classic Cardiovascular Magnetic Resonance takes a long time to obtain images over multiple heartbeats. Real-time CMR is faster than the classic one, but the data acquired is often of low spatial and temporal resolution. In this project, three UNets are used to produce MRI image reconstruction, namely, UNet3D, UNet2D1D, and UNet2D2D(below).  
@@ -205,10 +206,25 @@ OrderedDict([('UNet3D_SSIM_loss_no_regularization',
 
 If you want to find the best model from your training, I have also provided two Jupyter Notebook files to help you do that,  _calculate_metrics.ipynb_ and _combine_metrics.ipynb_.
 ### Tensorboard
+The Tensorboard callback is set below. 
+```
+tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=tensorboard_logdir, histogram_freq=2,
+                                                      write_graph=True, write_grads=True, write_images=True,
+                                                      batch_size=batch_size)
+```
 For individual training,  run the following command in 
 ```
 tensorboard --_logdir_=/path/to/the/log/dir
 ```
+
+#### Example usage of the tensorboard:
+![Loss Plot](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/TensorBoard_Loss.png)
+
+You can view the plot of the training loss and validation loss.
+
+![enter image description here](https://raw.githubusercontent.com/g2archie/UNet-MRI-Reconstruction/master/images/TensorBoard_Graph.png)
+
+The firgure is showing a few nodes in the graph. You can understand how the layers are connected within the model if you check the whole graph in Tensorboard.
 
 ### Jupyter notebook
 
