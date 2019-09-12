@@ -2,10 +2,10 @@ import os
 import pickle
 from datetime import datetime
 
-from networks.UNet3D import UNet3D
-from networks.UNet2D1D import UNet2D1D
-from networks.UNet2D2D import UNet2D2D
-from networks.UNet3D_old import UNet3D_old
+from models.UNet3D import UNet3D
+from models.UNet2D1D import UNet2D1D
+from models.UNet2D2D import UNet2D2D
+from models.UNet3D_old import UNet3D_old
 
 from utils import send_email
 from utils import write_to_h5

@@ -3,5 +3,5 @@
 config/email_config.yaml
 data/
 **__pycache__/
-
+legacy_network_code/
 *.zip
